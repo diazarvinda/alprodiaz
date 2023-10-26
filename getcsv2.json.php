@@ -1,16 +1,19 @@
 <?php
 
 function csvToJson($csvUrl) {
-    $csvData = [];
-    
-    if (($handle = fopen($csvUrl, 'r')) !== false) {
-        while (($row = fgetcsv($handle)) !== false) {
-            $csvData[] = $row;
-        }
-        fclose($handle);
+    $context = stream_context_create([
+        'http' => [
+            'header' => 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36',
+        ],
+    ]);
+
+
+    $csvData = @file_get_contents($csvUrl, false, $context);
+    if ($csvData === false) {
+        return ['error' => 'Failed to fetch CSV data'];
     }
 
-    // Assuming the first row of the CSV contains the column headers
+    $csvData = array_map("str_getcsv", explode("\n", $csvData));
     $headers = array_shift($csvData);
 
     $jsonArray = [];
@@ -29,9 +32,7 @@ function csvToJson($csvUrl) {
 $csvUrl = 'https://testingalpro.alwaysdata.net/api/coffee.csv';
 $jsonData = csvToJson($csvUrl);
 
-// Set the content type to JSON
 header('Content-Type: application/json');
 
-// Output the JSON data
 echo json_encode($jsonData);
 ?>
